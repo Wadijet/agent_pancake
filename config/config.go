@@ -13,8 +13,8 @@ import (
 // Configuration chứa thông tin tĩnh cần thiết để chạy ứng dụng
 // Nó chứa thông tin cơ sở dữ liệu
 type Configuration struct {
-	Username   bool   `env:"USERNAME,required"`     // Chế độ khởi tạo
-	Password   string `env:"ADDRESS,required"`      // Địa chỉ server
+	Email      string `env:"EMAIL,required"`        // Chế độ khởi tạo
+	Password   string `env:"PASSWORD,required"`     // Địa chỉ server
 	AgentId    string `env:"AGENT_ID,required"`     // Bí mật JWT
 	ApiBaseUrl string `env:"API_BASE_URL,required"` // Địa chỉ server
 }

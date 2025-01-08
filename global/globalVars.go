@@ -5,3 +5,4 @@ import (
 )
 
 var GlobalConfig *config.Configuration
+var ApiToken string = ""
