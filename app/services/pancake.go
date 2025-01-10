@@ -9,7 +9,7 @@ import (
 )
 
 // Hàm GetPageAccessToken sẽ gửi yêu cầu lấy access token của trang Facebook từ server
-func PanCake_GeneratePageAccessToken(page_id string, access_token string) (err error) {
+func PanCake_GeneratePageAccessToken(page_id string, access_token string) (page_access_token string, err error) {
 	// Số lần thử request
 	requestCount := 0
 	for {
@@ -17,7 +17,7 @@ func PanCake_GeneratePageAccessToken(page_id string, access_token string) (err e
 
 		if global.ApiToken == "" {
 			// trả về lỗi
-			return errors.New("Chưa đăng nhập. Thoát vòng lặp.")
+			return "", errors.New("Chưa đăng nhập. Thoát vòng lặp.")
 		}
 
 		// Khởi tạo client
@@ -48,14 +48,12 @@ func PanCake_GeneratePageAccessToken(page_id string, access_token string) (err e
 
 		if result["success"] == true {
 			page_access_token := result["page_access_token"].(string)
-			FolkForm_UpdatePageAccessToken(page_id, page_access_token)
-
-			return nil
+			return page_access_token, nil
 		}
 
 		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp
 		if requestCount > 5 {
-			return errors.New("Đã thử quá nhiều lần. Thoát vòng lặp.")
+			return "", errors.New("Đã thử quá nhiều lần. Thoát vòng lặp.")
 		}
 
 		// Dừng 30s trước khi tiếp tục
@@ -104,7 +102,7 @@ func PanCake_GetFbPages(access_token string) (err error) {
 			// Lấy dữ liệu từ phản hồi lưu ở data.items
 			data := result["categorized"].(map[string]interface{})["activated"].([]interface{})
 			for _, item := range data {
-				FolkForm_SendFbPage(item)
+				FolkForm_CreateFbPage(item)
 			}
 			return nil
 		}

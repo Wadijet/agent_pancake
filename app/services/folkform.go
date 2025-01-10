@@ -5,10 +5,13 @@ import (
 	"agent_pancake/utility/httpclient"
 	"agent_pancake/utility/hwid"
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
 )
+
+// Hàm tương tác với server FolkForm
 
 // Hàm FolkForm_GetFbPages sẽ gửi yêu cầu lấy danh sách trang Facebook từ server
 func FolkForm_GetFbPages() (pages []interface{}) {
@@ -121,8 +124,8 @@ func FolkForm_UpdatePageAccessToken(page_id string, page_access_token string) (e
 	}
 }
 
-// Hàm FolkForm_SendFbPage sẽ gửi yêu cầu lưu trang Facebook lên server
-func FolkForm_SendFbPage(page_data interface{}) (err error) {
+// Hàm FolkForm_CreateFbPage sẽ gửi yêu cầu lưu trang Facebook lên server
+func FolkForm_CreateFbPage(page_data interface{}) (err error) {
 	// Số lần thử request
 	requestCount := 0
 	for {
@@ -334,6 +337,105 @@ func FolkForm_CheckIn() (err error) {
 		if result["status"] == "success" {
 			log.Println("Điểm danh thành công")
 			return nil
+		}
+
+		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp
+		if requestCount > 5 {
+			return errors.New("Đã thử quá nhiều lần. Thoát vòng lặp.")
+		}
+
+		// Dừng 30s trước khi tiếp tục
+		time.Sleep(30 * time.Second)
+	}
+}
+
+// ========================================================================================================
+// Hàm xử lý logic trên server FolkForm
+
+// Hàm FolkForm_UpdarePageAccessToken sẽ cập nhật page access token của trang Facebook lên server bằng cách:
+// - Gửi yêu cầu tạo page access token từ server PanCake
+// - Lấy page access token từ phản hồi và cập nhật lên server FolkForm
+func FolkForm_UpdatePagesAccessToken() (err error) {
+	// Số lần thử request
+	requestCount := 0
+	for {
+		requestCount++
+
+		// Lấy danh sách access token
+		accessTokens := FolkForm_GetAccessTokens()
+		if len(accessTokens) > 0 {
+
+			// duyệt qua từng access token để lấy danh sách trang
+			for _, access_token := range accessTokens {
+				// lấy danh sách Pages từ server PanCake, đưa vào server FolkForm
+				PanCake_GetFbPages(access_token)
+
+				// Cập nhật page access token cho từng page
+				pages := FolkForm_GetFbPages()
+				if len(pages) > 0 {
+					// duyệt qua từng page để lấy access token
+					for _, page := range pages {
+						// chuyển page từ interface{} sang dạng map[string]interface{}
+						page := page.(map[string]interface{})
+						page_id := page["pageId"].(string)
+
+						page_access_token, err := PanCake_GeneratePageAccessToken(page_id, access_token)
+						if page_access_token != "" {
+							err = FolkForm_UpdatePageAccessToken(page_id, page_access_token)
+							if err != nil {
+								log.Fatal("Lỗi khi cập nhật page access token:", err)
+							}
+						} else {
+							log.Fatal("Lỗi khi lấy page access token:", err)
+						}
+					}
+
+				} else {
+					fmt.Println("Không có trang nào.")
+				}
+
+				// Lấy danh sách hội thoại từ server PanCake, đưa vào server FolkForm
+
+			}
+
+		} else {
+			fmt.Println("Không có access token nào.")
+		}
+
+		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp
+		if requestCount > 5 {
+			return errors.New("Đã thử quá nhiều lần. Thoát vòng lặp.")
+		}
+
+		// Dừng 30s trước khi tiếp tục
+		time.Sleep(30 * time.Second)
+	}
+}
+
+// Hàm FolkForm_GetConversations sẽ gửi yêu cầu lấy danh sách hội thoại từ server
+func FolkForm_UpdateAllConversations() (err error) {
+	// Số lần thử request
+	requestCount := 0
+	for {
+		requestCount++
+
+		// Cập nhật page access token cho từng page
+		pages := FolkForm_GetFbPages()
+		if len(pages) > 0 {
+			// duyệt qua từng page để lấy access token
+			for _, page := range pages {
+				// chuyển page từ interface{} sang dạng map[string]interface{}
+				page := page.(map[string]interface{})
+				page_id := page["pageId"].(string)
+				page_access_token := page["pageAccessToken"].(string)
+
+				// in ra thông tin page
+				fmt.Println("Page ID:", page_id)
+				fmt.Println("Page Access Token:", page_access_token)
+
+			}
+		} else {
+			fmt.Println("Không có trang nào.")
 		}
 
 		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp

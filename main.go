@@ -24,35 +24,16 @@ func main() {
 			services.FolkForm_CheckIn()
 		}
 
-		// Lấy danh sách access token
-		accessTokens := services.FolkForm_GetAccessTokens()
-		if len(accessTokens) > 0 {
+		// Cập nhật page access token của tất cả các trang
+		err := services.FolkForm_UpdatePagesAccessToken()
+		if err != nil {
+			fmt.Println("Lỗi khi cập nhật page access token:", err)
+		}
 
-			// duyệt qua từng access token để lấy danh sách trang
-			for _, access_token := range accessTokens {
-				// lấy danh sách Pages từ server PanCake, đưa vào server FolkForm
-				services.PanCake_GetFbPages(access_token)
-
-				// Cập nhật page access token cho từng page
-				pages := services.FolkForm_GetFbPages()
-				if len(pages) > 0 {
-					// duyệt qua từng page để lấy access token
-					for _, page := range pages {
-						// chuyển page từ interface{} sang dạng map[string]interface{}
-						page := page.(map[string]interface{})
-
-						// lấy access token từ server PanCake, đưa vào server FolkForm
-						services.PanCake_GeneratePageAccessToken(page["pageId"].(string), access_token)
-					}
-				} else {
-					fmt.Println("Không có trang nào.")
-				}
-
-				// Lấy danh sách hội thoại từ server PanCake, đưa vào server FolkForm
-
-			}
-		} else {
-			fmt.Println("Không có access token nào.")
+		// Lấy tất cả các Conversations
+		err = services.FolkForm_UpdateAllConversations()
+		if err != nil {
+			fmt.Println("Lỗi khi lấy danh sách Conversations:", err)
 		}
 
 		// Dừng 5 phút trước khi tiếp tục
