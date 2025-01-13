@@ -18,25 +18,33 @@ func main() {
 		fmt.Println("Thực hiện công việc tại:", time.Now())
 
 		// Nếu chưa đăng nhập thì đăng nhập
-		checkin := services.FolkForm_CheckIn()
-		if checkin != nil {
+		_, err := services.FolkForm_CheckIn()
+		if err != nil {
 			services.FolkForm_Login()
 			services.FolkForm_CheckIn()
 		}
 
-		// Cập nhật page access token của tất cả các trang
-		err := services.FolkForm_UpdatePagesAccessToken()
+		err = services.Bridge_SyncPages()
+		if err != nil {
+			fmt.Println("Lỗi khi đồng bộ trang:", err)
+		}
+
+		err = services.Bridge_UpdatePagesAccessToken()
 		if err != nil {
 			fmt.Println("Lỗi khi cập nhật page access token:", err)
 		}
 
-		// Lấy tất cả các Conversations
-		err = services.FolkForm_UpdateAllConversations()
+		err = services.Bridge_SyncConversations()
 		if err != nil {
-			fmt.Println("Lỗi khi lấy danh sách Conversations:", err)
+			fmt.Println("Lỗi khi đồng bộ cuộc trò chuyện:", err)
+		}
+
+		err = services.Bridge_SyncMessages()
+		if err != nil {
+			fmt.Println("Lỗi khi đồng bộ cuộc trò chuyện:", err)
 		}
 
 		// Dừng 5 phút trước khi tiếp tục
-		time.Sleep(5 * time.Minute)
+		time.Sleep(50 * time.Minute)
 	}
 }
