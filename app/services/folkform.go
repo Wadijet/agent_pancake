@@ -41,7 +41,7 @@ func FolkForm_CreateMessage(pageId string, pageUsername string, conversationId s
 		}
 
 		// Dừng 30s trước khi tiếp tục
-		time.Sleep(100 * time.Millisecond)
+		//time.Sleep(100 * time.Millisecond)
 
 		// Gửi yêu cầu POST
 		resp, err := client.POST("/fb_messages", data, nil)
@@ -160,7 +160,7 @@ func FolkForm_CreateConversation(pageId string, pageUsername string, conversatio
 		}
 
 		// Dừng 30s trước khi tiếp tục
-		time.Sleep(100 * time.Millisecond)
+		//time.Sleep(100 * time.Millisecond)
 
 		// Gửi yêu cầu POST
 		resp, err := client.POST("/fb_conversations", data, nil)
@@ -268,7 +268,7 @@ func FolkForm_GetFbPageByPageId(pageId string) (result map[string]interface{}, e
 		}
 
 		// Dừng 30s trước khi tiếp tục
-		time.Sleep(100 * time.Millisecond)
+		//time.Sleep(100 * time.Millisecond)
 
 		// Gửi yêu cầu GET
 		resp, err := client.GET("/fb_pages/pageId/"+pageId, nil)
@@ -445,7 +445,7 @@ func FolkForm_CreateFbPage(access_token string, page_data interface{}) (result m
 		}
 
 		// Dừng 30s trước khi tiếp tục
-		time.Sleep(100 * time.Millisecond)
+		//time.Sleep(100 * time.Millisecond)
 
 		// Gửi yêu cầu POST
 		resp, err := client.POST("/fb_pages", data, nil)

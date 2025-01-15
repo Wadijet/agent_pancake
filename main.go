@@ -29,12 +29,12 @@ func main() {
 			fmt.Println("Lỗi khi đồng bộ trang:", err)
 		}
 
-		err = services.Bridge_UpdatePagesAccessToken()
+		err = services.Local_SyncPagesFolkformToLocal()
 		if err != nil {
-			fmt.Println("Lỗi khi cập nhật page access token:", err)
+			fmt.Println("Lỗi khi đồng bộ trang:", err)
 		}
 
-		err = services.Bridge_SyncConversations()
+		err = services.Bridge_SyncConversationsFromCloud()
 		if err != nil {
 			fmt.Println("Lỗi khi đồng bộ cuộc trò chuyện:", err)
 		}

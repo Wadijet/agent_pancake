@@ -180,20 +180,33 @@ func Pancake_GetConversations_v1(page_id string, page_access_token string, since
 }
 
 // Hàm Pancake_GetConversations_v1 lấy danh sách Conversations từ server Pancake
-func Pancake_GetConversations_v2(page_id string, page_access_token string, last_conversation_id string) (result map[string]interface{}, err error) {
+func Pancake_GetConversations_v2(page_id string, last_conversation_id string) (result map[string]interface{}, err error) {
 	// Khởi tạo client
 	client := httpclient.NewHttpClient(global.GlobalConfig.PancakeBaseUrl, 60*time.Second)
-
-	// Thiết lập header
-	params := map[string]string{
-		"page_access_token":    page_access_token,
-		"last_conversation_id": last_conversation_id,
-	}
 
 	// Số lần thử request
 	requestCount := 0
 	for {
 		requestCount++
+
+		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp
+		if requestCount > 5 {
+			return nil, errors.New("Đã thử quá nhiều lần. Thoát vòng lặp.")
+		}
+
+	Start:
+
+		page_access_token, err := Local_GetPageAccessToken(page_id)
+		if err != nil {
+			log.Println("Lỗi khi lấy page_access_token")
+			return nil, err
+		}
+
+		// Thiết lập header
+		params := map[string]string{
+			"page_access_token":    page_access_token,
+			"last_conversation_id": last_conversation_id,
+		}
 
 		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp
 		if requestCount > 5 {
@@ -212,7 +225,7 @@ func Pancake_GetConversations_v2(page_id string, page_access_token string, last_
 
 		// Kiểm tra mã trạng thái, nếu không phải 200 thì thử lại
 		if resp.StatusCode != 200 {
-			log.Println("Lấy danh sách cuộc trò chuyện thất bại. StatusCode=", resp.StatusCode, "Thử lại lần thứ", requestCount)
+			log.Println("Lấy danh sách cuộc trò chuyện thất bại. StatusCode = ", resp.StatusCode, "Thử lại lần thứ", requestCount)
 			continue
 		}
 
@@ -226,8 +239,16 @@ func Pancake_GetConversations_v2(page_id string, page_access_token string, last_
 		if result["success"] == true {
 			return result, nil
 		} else {
-			// error_code=105 là token cần renew
-			log.Println("Lấy danh sách cuộc trò chuyện thất bại: ", result["message"])
+			errCode, _ := result["error_code"].(float64)
+			if errCode == 105 {
+				err = Local_UpdatePagesAccessToken(page_id)
+				if err != nil {
+					log.Println("Lỗi khi cập nhật page_access_token")
+				}
+				goto Start
+			}
+
+			log.Println("Lấy danh sách cuộc trò chuyện thất bại: message = ", result["message"])
 		}
 
 		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp
@@ -239,15 +260,9 @@ func Pancake_GetConversations_v2(page_id string, page_access_token string, last_
 }
 
 // Hàm Pancake_GetConversations lấy danh sách Conversations từ server Pancake
-func Pancake_GetMessages(page_id string, page_access_token string, conversation_id string, customer_id string) (result map[string]interface{}, err error) {
+func Pancake_GetMessages(page_id string, conversation_id string, customer_id string) (result map[string]interface{}, err error) {
 	// Khởi tạo client
 	client := httpclient.NewHttpClient(global.GlobalConfig.PancakeBaseUrl, 60*time.Second)
-
-	// Thiết lập header
-	params := map[string]string{
-		"page_access_token": page_access_token,
-		"customer_id":       customer_id,
-	}
 
 	// Số lần thử request
 	requestCount := 0
@@ -259,8 +274,22 @@ func Pancake_GetMessages(page_id string, page_access_token string, conversation_
 			return nil, errors.New("Đã thử quá nhiều lần. Thoát vòng lặp.")
 		}
 
+	Start:
+
 		// Dừng 30s trước khi tiếp tục
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
+
+		page_access_token, err := Local_GetPageAccessToken(page_id)
+		if err != nil {
+			log.Println("Lỗi khi lấy page_access_token")
+			return nil, err
+		}
+
+		// Thiết lập header
+		params := map[string]string{
+			"page_access_token": page_access_token,
+			"customer_id":       customer_id,
+		}
 
 		// Gửi yêu cầu GET
 		resp, err := client.GET("/public_api/v1/pages/"+page_id+"/conversations/"+conversation_id+"/messages", params)
@@ -285,6 +314,14 @@ func Pancake_GetMessages(page_id string, page_access_token string, conversation_
 		if result["success"] == true {
 			return result, nil
 		} else {
+			errCode, _ := result["error_code"].(float64)
+			if errCode == 105 {
+				err = Local_UpdatePagesAccessToken(page_id)
+				if err != nil {
+					log.Println("Lỗi khi cập nhật page_access_token")
+				}
+				goto Start
+			}
 			log.Println("Lấy danh sách tin nhắn thất bại: ", result["message"])
 		}
 

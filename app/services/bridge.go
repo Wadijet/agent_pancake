@@ -4,6 +4,10 @@ import (
 	"errors"
 	"log"
 	"time"
+
+	"agent_pancake/global"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 // ========================================================================================================
@@ -29,6 +33,7 @@ func bridge_SyncPagesOfAccessToken(access_token string) (resultErr error) {
 		time.Sleep(100 * time.Millisecond)
 
 		FolkForm_CreateFbPage(access_token, page)
+
 	}
 
 	return nil
@@ -82,7 +87,7 @@ func Bridge_SyncPages() (resultErr error) {
 // Hàm FolkForm_UpdarePageAccessToken sẽ cập nhật page_access_token của trang Facebook trên server FolkForm bằng cách:
 // - Gửi yêu cầu tạo page_access_token lên server PanCake
 // - Lấy page_access_token từ phản hồi và cập nhật lên server FolkForm
-func Bridge_UpdatePagesAccessToken() (resultErr error) {
+func Bridge_UpdatePagesAccessToken_toFolkForm() (resultErr error) {
 
 	limit := 50
 	page := 0
@@ -115,7 +120,7 @@ func Bridge_UpdatePagesAccessToken() (resultErr error) {
 					old_page_access_token := page["pageAccessToken"].(string)
 
 					// Gọi hàm PanCake_GetFbPages để test page_access_token có hợp lệ không
-					_, err := Pancake_GetConversations_v2(page_id, page_id, old_page_access_token)
+					_, err := Pancake_GetConversations_v2(page_id, old_page_access_token)
 					if err == nil {
 						// Nếu page_access_token hợp lệ thì tiếp tục
 						log.Println("Page_access_token vẫn còn hiệu lực")
@@ -145,6 +150,57 @@ func Bridge_UpdatePagesAccessToken() (resultErr error) {
 		} else {
 			break
 		}
+	}
+
+	return nil
+}
+
+// Hàm Bridge_SyncPagesFolkformToLocal sẽ đồng bộ danh sách trang Facebook từ server FolkForm về server local
+// - Lấy danh sách trang từ server FolkForm
+// - Đẩy danh sách trang vào server local
+func Bridge_SyncPagesFolkformToLocal() (resultErr error) {
+	limit := 50
+	page := 0
+
+	for {
+		// Dừng nửa giây trước khi tiếp tục
+		time.Sleep(100 * time.Millisecond)
+
+		// Lấy danh sách các pages từ server FolkForm
+		resultPages, err := FolkForm_GetFbPages(page, limit)
+		if err != nil {
+			return errors.New("Lỗi khi lấy danh sách trang Facebook")
+		}
+
+		data := resultPages["data"].(map[string]interface{})
+		itemCount := data["itemCount"].(float64)
+
+		if itemCount > 0 {
+			items := data["items"].([]interface{})
+			if len(items) > 0 {
+				// Clear all data in global.PanCake_FbPages
+				global.PanCake_FbPages = nil
+
+				for _, item := range items {
+
+					// chuyển item từ interface{} sang dạng global.FbPage
+					var cloudFbPage global.FbPage
+					bsonBytes, err := bson.Marshal(item)
+					if err != nil {
+						return err
+					}
+
+					err = bson.Unmarshal(bsonBytes, &cloudFbPage)
+					if err != nil {
+						return err
+					}
+
+					// Append cloudFbPage to global.PanCake_FbPages
+					global.PanCake_FbPages = append(global.PanCake_FbPages, cloudFbPage)
+				}
+			}
+		}
+
 	}
 
 	return nil
@@ -214,14 +270,14 @@ func bridge_SyncConversationsOfPage_v1(page_id string, page_username string, pag
 // Hàm bridge_SyncConversationsOfPage_v2 sẽ đồng bộ danh sách hội thoại của trang Facebook từ server Pancake về server FolkForm
 // - Lấy danh sách hội thoại của page từ server Pancake
 // - Đẩy danh sách hội thoại vào server FolkForm
-func bridge_SyncConversationsOfPage_v2(page_id string, page_username string, page_access_token string) (resultErr error) {
+func bridge_SyncConversationsOfPage_v2(page_id string, page_username string) (resultErr error) {
 
 	last_conversation_id := ""
 	for {
 		// Dừng nửa giây trước khi tiếp tục
 		time.Sleep(100 * time.Millisecond)
 
-		resultGetConversations, err := Pancake_GetConversations_v2(page_id, page_access_token, last_conversation_id)
+		resultGetConversations, err := Pancake_GetConversations_v2(page_id, last_conversation_id)
 		if err != nil {
 			log.Println("Lỗi khi lấy danh sách hội thoại:", err)
 			break
@@ -238,8 +294,13 @@ func bridge_SyncConversationsOfPage_v2(page_id string, page_username string, pag
 					}
 				}
 
-				last_conversation_id = conversations[len(conversations)-1].(map[string]interface{})["id"].(string)
-				continue
+				new_last_conversation_id := conversations[len(conversations)-1].(map[string]interface{})["id"].(string)
+				if new_last_conversation_id != last_conversation_id {
+					last_conversation_id = new_last_conversation_id
+					continue
+				} else {
+					break
+				}
 			} else {
 				break
 			}
@@ -254,7 +315,7 @@ func bridge_SyncConversationsOfPage_v2(page_id string, page_username string, pag
 // Hàm Bridge_SyncConversations sẽ đồng bộ danh sách hội thoại của trang Facebook từ server Pancake về server FolkForm
 // - Lấy danh sách trang từ server FolkForm
 // - Gọi hàm bridge_SyncConversationsOfPage để đồng bộ hội thoại của từng trang
-func Bridge_SyncConversations() (resultErr error) {
+func Bridge_SyncConversationsFromCloud() (resultErr error) {
 
 	limit := 50
 	page := 0
@@ -289,7 +350,7 @@ func Bridge_SyncConversations() (resultErr error) {
 					is_sync := page["isSync"].(bool)
 					if page_access_token != "" && is_sync == true {
 						// Gọi hàm bridge_SyncConversationsOfPage để đồng bộ hội thoại của từng trang
-						err = bridge_SyncConversationsOfPage_v2(page_id, page_username, page_access_token)
+						err = bridge_SyncConversationsOfPage_v2(page_id, page_username)
 						if err != nil {
 							log.Println("Lỗi khi đồng bộ hội thoại:", err)
 							continue
@@ -308,9 +369,9 @@ func Bridge_SyncConversations() (resultErr error) {
 	return nil
 }
 
-func bridge_SyncMessageOfConversation(page_access_token string, page_id string, page_username string, conversation_id string, customer_id string) (resultErr error) {
+func bridge_SyncMessageOfConversation(page_id string, page_username string, conversation_id string, customer_id string) (resultErr error) {
 
-	resultGetMessages, err := Pancake_GetMessages(page_id, page_access_token, conversation_id, customer_id)
+	resultGetMessages, err := Pancake_GetMessages(page_id, conversation_id, customer_id)
 	if err != nil {
 		return errors.New("Lỗi khi lấy danh sách tin nhắn từ server Pancake")
 	}
@@ -366,7 +427,7 @@ func Bridge_SyncMessages() (resultErr error) {
 
 					if page_access_token != "" {
 						// Gọi hàm bridge_SyncConversationsOfPage để đồng bộ hội thoại của từng trang
-						err = bridge_SyncMessageOfConversation(page_access_token, pageId, pageUsername, conversationId, customerId)
+						err = bridge_SyncMessageOfConversation(pageId, pageUsername, conversationId, customerId)
 						if err != nil {
 							log.Println("Lỗi khi đồng bộ tin nhắn:", err)
 							continue
