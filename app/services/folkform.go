@@ -28,7 +28,7 @@ func FolkForm_CreateMessage(pageId string, pageUsername string, conversationId s
 		"pageUsername":   pageUsername,
 		"conversationId": conversationId,
 		"customerId":     customerId,
-		"apiData":        messageData,
+		"panCakeData":    messageData,
 	}
 
 	// Số lần thử request
@@ -147,7 +147,7 @@ func FolkForm_CreateConversation(pageId string, pageUsername string, conversatio
 	data := map[string]interface{}{
 		"pageId":       pageId,
 		"pageUsername": pageUsername,
-		"apiData":      conversation_data,
+		"panCakeData":  conversation_data,
 	}
 
 	// Số lần thử request
@@ -432,7 +432,7 @@ func FolkForm_CreateFbPage(access_token string, page_data interface{}) (result m
 	// Chuẩn bị dữ liệu cần gửi
 	data := map[string]interface{}{
 		"accessToken": access_token,
-		"apiData":     page_data,
+		"panCakeData": page_data,
 	}
 
 	// Số lần thử request
