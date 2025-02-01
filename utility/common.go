@@ -1,6 +1,25 @@
 package utility
 
-import "time"
+import (
+	"fmt"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+// GoProtect là một hàm bao bọc (wrapper) giúp bảo vệ một hàm khác khỏi bị panic.
+// Nếu xảy ra panic trong hàm f(), GoProtect sẽ bắt lại và in ra lỗi thay vì làm chương trình dừng hẳn.
+func GoProtect(f func()) {
+	defer func() {
+		// Sử dụng recover() để bắt lỗi panic nếu có
+		if err := recover(); err != nil {
+			fmt.Printf("Đã bắt lỗi panic: %v\n", err)
+		}
+	}()
+
+	// Gọi hàm f() được truyền vào
+	f()
+}
 
 // UnixMilli dùng để lấy mili giây của thời gian cho trước
 // @params - thời gian
@@ -14,4 +33,23 @@ func UnixMilli(t time.Time) int64 {
 // @returns - timestamp hiện tại (tính bằng mili giây)
 func CurrentTimeInMilli() int64 {
 	return UnixMilli(time.Now())
+}
+
+// String2ObjectID chuyển đổi chuỗi thành ObjectID
+// @params - chuỗi cần chuyển đổi
+// @returns - ObjectID
+func String2ObjectID(id string) primitive.ObjectID {
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return primitive.NilObjectID
+	}
+	return objectId
+}
+
+// ObjectID2String chuyển đổi ObjectID thành chuỗi
+// @params - ObjectID cần chuyển đổi
+// @returns - chuỗi ObjectID
+func ObjectID2String(id primitive.ObjectID) string {
+	stringObjectID := id.Hex()
+	return stringObjectID
 }

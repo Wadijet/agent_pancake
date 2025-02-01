@@ -66,6 +66,7 @@ func Local_SyncPagesFolkformToLocal() (resultErr error) {
 	return nil
 }
 
+// Hàm local_UpdatePagesAccessToken sẽ cập nhật page_access_token cho page có pageId tương ứng vào biến local global.PanCake_FbPages
 func local_UpdatePagesAccessToken(pageId string, page_access_token string) (resultErr error) {
 	// Find page in global.PanCake_FbPages
 	for index, page := range global.PanCake_FbPages {
@@ -76,10 +77,13 @@ func local_UpdatePagesAccessToken(pageId string, page_access_token string) (resu
 	return nil
 }
 
+// Hàm Local_UpdatePagesAccessToken sẽ cập nhật page_access_token cho page có pageId tương ứng vào biến local global.PanCake_FbPages
 func Local_UpdatePagesAccessToken(pageId string) (resultErr error) {
 
 	for i, page := range global.PanCake_FbPages {
 		if page.PageId == pageId {
+
+			// Lấy access_token từ global.GlobalConfig
 			access_token := page.AccessToken
 
 			// Gọi hàm PanCake_GeneratePageAccessToken để lấy page_access_token
@@ -100,6 +104,7 @@ func Local_UpdatePagesAccessToken(pageId string) (resultErr error) {
 	return errors.New("Không tìm thấy page")
 }
 
+// Hàm Local_GetPageAccessToken sẽ lấy page_access_token từ biến local global.PanCake_FbPages
 func Local_GetPageAccessToken(pageId string) (pageAccessToken string, resultErr error) {
 	// Find page in global.PanCake_FbPages
 	for _, page := range global.PanCake_FbPages {

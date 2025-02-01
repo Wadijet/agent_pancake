@@ -131,6 +131,63 @@ func FolkForm_GetConversations(page int, limit int) (result map[string]interface
 	}
 }
 
+// Hàm FolkForm_GetConversations sẽ gửi yêu cầu lấy danh sách hội thoại từ server
+func FolkForm_GetConversationsWithPageId(page int, limit int, pageId string) (result map[string]interface{}, err error) {
+
+	if global.ApiToken == "" {
+		// trả về lỗi
+		return nil, errors.New("Chưa đăng nhập. Thoát vòng lặp.")
+	}
+
+	// Khởi tạo client
+	client := httpclient.NewHttpClient(global.GlobalConfig.ApiBaseUrl, 10*time.Second)
+	// Thiết lập header
+	client.SetHeader("Authorization", "Bearer "+global.ApiToken)
+	// thêm param vào url với key là "page" và value là 0, limit là 10
+	params := map[string]string{
+		"page":   strconv.Itoa(page),
+		"limit":  strconv.Itoa(limit),
+		"pageId": pageId,
+	}
+
+	// Số lần thử request
+	requestCount := 0
+	for {
+		requestCount++
+		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp
+		if requestCount > 5 {
+			return nil, errors.New("Đã thử quá nhiều lần. Thoát vòng lặp.")
+		}
+
+		// Dừng 30s trước khi tiếp tục
+		time.Sleep(100 * time.Millisecond)
+
+		// Gửi yêu cầu GET
+		resp, err := client.GET("/fb_conversations/newest", params)
+		if err != nil {
+			log.Println("Lỗi khi gọi API:", err)
+			continue
+		}
+
+		// Đọc dữ liệu từ phản hồi
+		var result map[string]interface{}
+		if err := httpclient.ParseJSONResponse(resp, &result); err != nil {
+			log.Println("Lỗi khi phân tích phản hồi:", err)
+			continue
+		}
+
+		// Lấy dữ liệu từ phản hồi
+		if result["status"] == "success" {
+			return result, nil
+		}
+
+		// Nếu số lần thử vượt quá 5 lần thì thoát vòng lặp
+		if requestCount > 5 {
+			return result, errors.New("Đã thử quá nhiều lần. Thoát vòng lặp.")
+		}
+	}
+}
+
 // Hàm Folkform_CreateConversation sẽ gửi yêu cầu tạo hội thoại lên server
 func FolkForm_CreateConversation(pageId string, pageUsername string, conversation_data interface{}) (result map[string]interface{}, err error) {
 
