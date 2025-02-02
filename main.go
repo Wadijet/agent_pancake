@@ -15,11 +15,11 @@ func main() {
 	log.Println("Đã đọc cấu hình từ file .env")
 
 	// Chạy đồng bộ tất cả dữ liệu vào cuối ngày
-	//utility.GoProtect(func() { SyncAllData(5) })
+	utility.GoProtect(func() { SyncAllData(5) })
 
 	// Chạy đồng bộ dữ liệu mới nhất mỗi 30 giây
 	log.Println("Bắt đầu đồng bộ dữ liệu mới nhất mỗi 30 giây")
-	utility.GoProtect(func() { SyncNewData(5) })
+	//utility.GoProtect(func() { SyncNewData(5) })
 
 }
 
@@ -52,7 +52,7 @@ func SyncBaseAuth() {
 
 // SyncAllData sẽ đồng bộ tất cả dữ liệu vào cuối ngày, mỗi ngày chạy 1 lần
 func SyncAllData(sleepMinutes int) {
-	// Vòng lặp vô hạn chạy 5 phút một lần
+
 	for {
 		SyncBaseAuth()
 
