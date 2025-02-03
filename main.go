@@ -15,7 +15,7 @@ func main() {
 	log.Println("Đã đọc cấu hình từ file .env")
 
 	// Chạy đồng bộ tất cả dữ liệu vào cuối ngày
-	utility.GoProtect(func() { SyncAllData(30) })
+	//utility.GoProtect(func() { SyncAllData(30) })
 
 	// Chạy đồng bộ dữ liệu mới nhất mỗi 30 giây
 	log.Println("Bắt đầu đồng bộ dữ liệu mới nhất mỗi 30 giây")

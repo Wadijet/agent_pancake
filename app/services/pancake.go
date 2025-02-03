@@ -143,8 +143,13 @@ func Pancake_GetConversations_v2(page_id string, last_conversation_id string) (r
 		// Lấy page_access_token
 		page_access_token, err := Local_GetPageAccessToken(page_id)
 		if err != nil {
-			log.Println("Lỗi khi lấy page_access_token")
+			log.Println("Lỗi khi lấy page_access_token: ", err)
 			return nil, err
+		}
+		if page_access_token == "" {
+			Local_UpdatePagesAccessToken(page_id)
+			log.Println("Không tìm thấy page_access_token trong biến local")
+			goto Start
 		}
 
 		// Thiết lập header
@@ -186,7 +191,7 @@ func Pancake_GetConversations_v2(page_id string, last_conversation_id string) (r
 		} else {
 			// Nếu lỗi 105 thì cập nhật lại page_access_token
 			errCode, _ := result["error_code"].(float64)
-			if errCode == 105 {
+			if errCode == 105 || errCode == 102 { // 105: page_access_token hết hạn, cần cập nhật lại page_access_token
 				err = Local_UpdatePagesAccessToken(page_id)
 				if err != nil {
 					log.Println("Lỗi khi cập nhật page_access_token")
