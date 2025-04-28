@@ -1,12 +1,9 @@
 package main
 
 import (
-	"agent_pancake/app/services"
 	"agent_pancake/config"
 	"agent_pancake/global"
-	"agent_pancake/utility"
 	"log"
-	"time"
 )
 
 func main() {
@@ -14,14 +11,9 @@ func main() {
 	global.GlobalConfig = config.NewConfig()
 	log.Println("Đã đọc cấu hình từ file .env")
 
-	// Chạy đồng bộ tất cả dữ liệu vào cuối ngày
-	//utility.GoProtect(func() { SyncAllData(30) })
-
-	// Chạy đồng bộ dữ liệu mới nhất mỗi 30 giây
-	log.Println("Bắt đầu đồng bộ dữ liệu mới nhất mỗi 30 giây")
-	utility.GoProtect(func() { SyncNewData(5) })
-
 }
+
+/*
 
 func SyncBaseAuth() {
 
@@ -104,3 +96,4 @@ func SyncNewData(sleepSeconds int) {
 		time.Sleep(time.Duration(sleepSeconds) * time.Second)
 	}
 }
+*/
