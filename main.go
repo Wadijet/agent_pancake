@@ -1,9 +1,11 @@
 package main
 
 import (
+	"agent_pancake/app/integrations"
 	"agent_pancake/config"
 	"agent_pancake/global"
 	"log"
+	"time"
 )
 
 func main() {
@@ -13,20 +15,18 @@ func main() {
 
 }
 
-/*
-
 func SyncBaseAuth() {
 
 	// Nếu chưa đăng nhập thì đăng nhập
-	_, err := services.FolkForm_CheckIn()
+	_, err := integrations.FolkForm_CheckIn()
 	if err != nil {
 		log.Println("Chưa đăng nhập, tiến hành đăng nhập...")
-		services.FolkForm_Login()
-		services.FolkForm_CheckIn()
+		integrations.FolkForm_Login()
+		integrations.FolkForm_CheckIn()
 	}
 
 	// Đồng bộ danh sách các pages từ pancake sang folkform
-	err = services.Bridge_SyncPages()
+	err = integrations.Bridge_SyncPages()
 	if err != nil {
 		log.Println("Lỗi khi đồng bộ trang:", err)
 	} else {
@@ -34,7 +34,7 @@ func SyncBaseAuth() {
 	}
 
 	// Đồng bộ danh sách các pages từ folkform sang local
-	err = services.Local_SyncPagesFolkformToLocal()
+	err = integrations.Local_SyncPagesFolkformToLocal()
 	if err != nil {
 		log.Println("Lỗi khi đồng bộ trang:", err)
 	} else {
@@ -52,7 +52,7 @@ func SyncAllData(sleepMinutes int) {
 		log.Println("Thực hiện công việc tại:", time.Now())
 
 		// Đồng bộ danh sách các hội thoại từ pancake sang folkform
-		err := services.Bridge_SyncConversationsFromCloud()
+		err := integrations.Bridge_SyncConversationsFromCloud()
 		if err != nil {
 			log.Println("Lỗi khi đồng bộ cuộc trò chuyện:", err)
 		} else {
@@ -60,7 +60,7 @@ func SyncAllData(sleepMinutes int) {
 		}
 
 		// Đồng bộ danh sách các tin nhắn từ pancake sang folkform
-		err = services.Bridge_SyncMessages()
+		err = integrations.Bridge_SyncMessages()
 		if err != nil {
 			log.Println("Lỗi khi đồng bộ tin nhắn:", err)
 		} else {
@@ -80,15 +80,15 @@ func SyncNewData(sleepSeconds int) {
 		SyncBaseAuth()
 
 		// Nếu chưa đăng nhập thì đăng nhập
-		_, err := services.FolkForm_CheckIn()
+		_, err := integrations.FolkForm_CheckIn()
 		if err != nil {
 			log.Println("Chưa đăng nhập, tiến hành đăng nhập...")
-			services.FolkForm_Login()
-			services.FolkForm_CheckIn()
+			integrations.FolkForm_Login()
+			integrations.FolkForm_CheckIn()
 		}
 
 		log.Println("Bắt đầu đồng bộ dữ liệu mới nhất")
-		services.Sync_NewMessagesOfAllPages()
+		integrations.Sync_NewMessagesOfAllPages()
 		log.Println("Đồng bộ dữ liệu mới nhất thành công")
 
 		// Dừng sleepSeconds giây trước khi tiếp tục
@@ -96,4 +96,3 @@ func SyncNewData(sleepSeconds int) {
 		time.Sleep(time.Duration(sleepSeconds) * time.Second)
 	}
 }
-*/

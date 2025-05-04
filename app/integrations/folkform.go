@@ -628,7 +628,7 @@ func FolkForm_Login() (result map[string]interface{}, resultError error) {
 		}
 
 		// Gửi yêu cầu POST
-		resp, err := client.POST("/users/login", data, nil)
+		resp, err := client.POST("/auth/login", data, nil)
 		if err != nil {
 			log.Println("Lỗi khi gọi API:", err)
 			continue
