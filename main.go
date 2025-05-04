@@ -2,17 +2,53 @@ package main
 
 import (
 	"agent_pancake/app/integrations"
+	"agent_pancake/app/jobs"
+	"agent_pancake/app/scheduler"
 	"agent_pancake/config"
 	"agent_pancake/global"
+	"context"
 	"log"
 	"time"
 )
+
+// Các Scheduler
+var Scheduler = scheduler.NewScheduler() // Scheduler chứa các jobs
 
 func main() {
 	// Đọc dữ liệu từ file .env
 	global.GlobalConfig = config.NewConfig()
 	log.Println("Đã đọc cấu hình từ file .env")
 
+	// Khởi tạo scheduler
+	s := scheduler.NewScheduler()
+
+	// Tạo một job mới chạy mỗi 5 phút
+	syncNewJob := jobs.NewSyncNewJob("sync-new-job", "0 */5 * * * *")
+
+	// Chạy job ngay lập tức
+	ctx := context.Background()
+	if err := syncNewJob.Execute(ctx); err != nil {
+		log.Printf("Lỗi khi thực thi job lần đầu: %v", err)
+	}
+
+	// Thêm job vào scheduler để chạy theo lịch
+	err := s.AddJob(syncNewJob.GetName(), syncNewJob.GetSchedule(), func() {
+		ctx := context.Background()
+		if err := syncNewJob.Execute(ctx); err != nil {
+			log.Printf("Lỗi khi thực thi job %s: %v", syncNewJob.GetName(), err)
+		}
+	})
+	if err != nil {
+		log.Fatalf("Lỗi khi thêm job: %v", err)
+	}
+
+	// Khởi động scheduler
+	s.Start()
+	log.Println("Scheduler đã được khởi động")
+
+	// Giữ chương trình chạy
+	// Trong thực tế, bạn có thể thêm các logic khác ở đây
+	select {}
 }
 
 func SyncBaseAuth() {

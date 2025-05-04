@@ -687,7 +687,7 @@ func FolkForm_CheckIn() (result map[string]interface{}, err error) {
 		time.Sleep(100 * time.Millisecond)
 
 		// Gửi yêu cầu POST
-		resp, err := client.POST("/agents/checkin/"+global.GlobalConfig.AgentId, nil, nil)
+		resp, err := client.POST("/agent/check-in/"+global.GlobalConfig.AgentId, nil, nil)
 		if err != nil {
 			log.Println("Lỗi khi gọi API:", err)
 			continue

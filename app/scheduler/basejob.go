@@ -9,6 +9,7 @@ package scheduler
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
@@ -33,20 +34,54 @@ type Job interface {
 // ================== BASE JOB ==================
 
 // BaseJob cung cấp sẵn name, schedule và các hàm mặc định.
-// Các job cụ thể chỉ cần nhúng *BaseJob và implement Execute.
+// Các job cụ thể chỉ cần nhúng *BaseJob và implement ExecuteInternal.
 type BaseJob struct {
-	name     string
-	schedule string
+	name      string
+	schedule  string
+	mu        sync.Mutex
+	isRunning bool
 }
 
 // NewBaseJob khởi tạo BaseJob với tên và lịch chạy.
 func NewBaseJob(name, schedule string) *BaseJob {
-	return &BaseJob{name: name, schedule: schedule}
+	return &BaseJob{
+		name:      name,
+		schedule:  schedule,
+		mu:        sync.Mutex{},
+		isRunning: false,
+	}
 }
 
 func (j *BaseJob) GetName() string     { return j.name }
 func (j *BaseJob) GetSchedule() string { return j.schedule }
+
+// Execute thực thi logic chính của job.
+// Phương thức này kiểm soát trạng thái đang chạy của job.
+// Nếu job đang chạy thì bỏ qua, nếu chưa chạy thì thực thi.
 func (j *BaseJob) Execute(ctx context.Context) error {
+	// Kiểm tra và khóa mutex
+	j.mu.Lock()
+	if j.isRunning {
+		j.mu.Unlock()
+		return nil
+	}
+	j.isRunning = true
+	j.mu.Unlock()
+
+	// Đảm bảo cập nhật trạng thái khi kết thúc
+	defer func() {
+		j.mu.Lock()
+		j.isRunning = false
+		j.mu.Unlock()
+	}()
+
+	// Gọi phương thức ExecuteInternal của job con
+	return j.ExecuteInternal(ctx)
+}
+
+// ExecuteInternal thực thi logic riêng của job con.
+// Các job con phải override phương thức này.
+func (j *BaseJob) ExecuteInternal(ctx context.Context) error {
 	// Mặc định không làm gì, job con phải override
 	return nil
 }

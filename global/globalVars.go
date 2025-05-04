@@ -3,8 +3,6 @@ package global
 import (
 	"agent_pancake/config"
 
-	"agent_pancake/app/scheduler"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -25,6 +23,3 @@ type FbPage struct {
 }
 
 var PanCake_FbPages []FbPage
-
-// Các Scheduler
-var Scheduler = scheduler.NewScheduler() // Scheduler chứa các jobs
